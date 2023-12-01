@@ -1,0 +1,53 @@
+.common-container {
+  position: relative;
+  box-sizing: border-box;
+}
+
+.header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-left: 20%;
+  padding-right: 20%;
+}
+
+.intro-wrapper {
+  display: flex;
+  justify-content: center;
+}
+
+.intro {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 50%;
+  background-color: lightgray;
+  min-height: 300px;
+  margin-top: 50px;
+}
+
+.intro-text {
+  font-size: 1.5rem;
+}
+
+.logo-text {
+  font-size: 1.5rem;
+}
+
+input, button {
+  margin-left: 10px;
+  height: 30px;
+}
+
+.button {
+  color: green;
+  border: 2px solid green;
+}
+
+.error {
+  position: absolute;
+  top: 45px;
+  left: calc(50% - 45px);
+  font-size: 1.8rem;
+  color: red;
+}
