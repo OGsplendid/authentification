@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import './App.css'
 import { Logo } from './components/Logo/Logo'
 import { Form } from './components/Form/Form'
 import { Header } from './components/Header/Header'
 import { Intro } from './components/Intro/Intro'
 import { News } from './components/News/News'
+import { LogoutWidget } from './components/LogoutWidget/LogoutWidget'
 
 interface IForm {
   login: string,
@@ -16,7 +17,7 @@ interface IError {
   message: string,
 }
 
-interface IState {
+export interface IState {
   id: string,
   avatar: string,
   login: string,
@@ -32,10 +33,9 @@ function App() {
     exists: false,
     message: '',
   });
-  const [token, setToken] = useState('');
-  const [profile, setProfile] = useState<IState>();
+  const [profile, setProfile] = useState<IState | undefined>();
   const [displayIntro, setDisplayIntro] = useState(true);
-  const [displayNews, setDisplayNews] = useState(false);
+  const [news, setNews] = useState([]);
 
   async function requestProfile(token: string) {
     try {
@@ -47,33 +47,24 @@ function App() {
         },
       })
       const data = await response.json();
-      console.log(data)
+      setProfile(data);
+      setDisplayIntro(false);
     } catch(e) {
-      console.log(e)
+        console.log(e)
     }
-    // fetch('http://localhost:7070/private/me', {
-    //         method: 'GET',
-    //         headers: {
-    //           'Authorization':
-    //             `Bearer ${token}`,
-    //         },
-    //       })
-    //   .then(response => {
-    //     if (response.status === 400) {
-    //       setError((prev) => ({
-    //         ...prev,
-    //         exists: true,
-    //         message: response.statusText,
-    //       }))
-    //       return;
-    //     } else {
-    //       response.json();
-    //     }
-    //   })
-    //     .then(data => console.log(data));
   }
 
-  // const requestNews = ()
+  async function requestNews(token: string) {
+    const response = await fetch('http://localhost:7070/private/news', {
+      method: 'GET',
+      headers: {
+        Authorization:
+          `Bearer ${token}`,
+      },
+    })
+    const data = await response.json();
+    setNews(data);
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const {name, value} = e.target;
@@ -90,6 +81,7 @@ function App() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!form.login.trim() || !form.password.trim()) return;
     fetch('http://localhost:7070/auth', {
       method: 'POST',
       headers: {
@@ -107,22 +99,39 @@ function App() {
           }))
           return;
         } else {
-          setToken(data.token);
-          localStorage.setItem('token', token); // устанавливается со второго раза
+          localStorage.setItem('token', data.token);
         }
+        return data.token;
       })
-      requestProfile(token);
+      .then((token) => {
+        requestProfile(token);
+        requestNews(token);
+      })
   }
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    setDisplayIntro(true);
+  }
+
+  useEffect(() => {
+    const storedToken = localStorage.getItem('token');
+    if (storedToken) {
+      requestProfile(storedToken);
+      requestNews(storedToken);
+    }
+  }, []);
 
   return (
     <div className='common-container'>
       {error.exists && <div className='error'>{error.message}</div>}
       <Header>
         <Logo title={'Neto Social'} />
-        <Form login={form.login} password={form.password} onChange={handleChange} onSubmit={handleSubmit} />
+        {displayIntro && <Form login={form.login} password={form.password} onChange={handleChange} onSubmit={handleSubmit} />}
+        {!displayIntro && <LogoutWidget profile={profile} onClick={handleLogout} />}
       </Header>
       {displayIntro && <Intro intro={'Neto Social. Facebook and VK killer'} />}
-      {displayNews && <News />}
+      {!displayIntro && <News news={news} />}
     </div>
   )
 }
